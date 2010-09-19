@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<!--
+		Copyright (C) 2010 Felix Bechstein
+	-->
+	<!--
+		This file is part of WebSMS. This program is free software; you can
+		redistribute it and/or modify it under the terms of the GNU General
+		Public License as published by the Free Software Foundation; either
+		version 3 of the License, or (at your option) any later version.
+	-->
+	<!--
+		This program is distributed in the hope that it will be useful, but
+		WITHOUT ANY WARRANTY; without even the implied warranty of
+		MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+		General Public License for more details. You should have received a
+		copy of the GNU General Public License along with this program; If
+		not, see <http://www.gnu.org/licenses/>.
+	-->
+<resources>
+	<string name="app_name">WebSMS Connector: Yallo</string>
+	<string name="app_version">0.2</string>
+	<string name="connector_yallo_author">Koni</string>
+	<string name="connector_yallo_name">Yallo</string>
+	<string name="connector_yallo_preferences">Preferences - Yallo</string>
+	<string name="connector_yallo_enable_">Enable Yallo</string>
+	<string name="connector_yallo_user_">Username</string>
+	<string name="connector_yallo_user_hint">Yallo mobile phone number</string>
+	<string name="connector_yallo_password_">Password</string>
+	<string name="connector_yallo_password_hint">Yallo Password</string>
+	<string name="connector_yallo_homepage">Yallo Homepage</string>
+	<string name="connector_yallo_homepage_hint">Visit yallo.ch online</string>
+	<string name="connector_yallo_homepage_url">http://www.yallo.ch</string>
+	<string name="error_only_one_recipient_allowed">Only one recipient allowed</string>
+</resources>
