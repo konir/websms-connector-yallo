@@ -31,6 +31,7 @@ import android.preference.PreferenceManager;
 import de.ub0r.android.websms.connector.common.Connector;
 import de.ub0r.android.websms.connector.common.ConnectorCommand;
 import de.ub0r.android.websms.connector.common.ConnectorSpec;
+import de.ub0r.android.websms.connector.common.ConnectorSpec.SubConnectorSpec;
 import de.ub0r.android.websms.connector.common.Log;
 import de.ub0r.android.websms.connector.common.Utils;
 import de.ub0r.android.websms.connector.common.WebSMSException;
@@ -68,7 +69,7 @@ public class ConnectorYallo extends Connector {
 		c.setBalance(null);
 		c.setCapabilities(ConnectorSpec.CAPABILITIES_BOOTSTRAP | ConnectorSpec.CAPABILITIES_UPDATE
 				| ConnectorSpec.CAPABILITIES_SEND | ConnectorSpec.CAPABILITIES_PREFS);
-		c.addSubConnector("yallo", c.getName(), 0);
+		c.addSubConnector("yallo", c.getName(), SubConnectorSpec.FEATURE_MULTIRECIPIENTS);
 		return c;
 	}
 
