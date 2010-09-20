@@ -18,7 +18,7 @@
 	-->
 <resources>
 	<string name="app_name">WebSMS Connector: Yallo</string>
-	<string name="app_version">0.2</string>
+	<string name="app_version">0.3</string>
 	<string name="connector_yallo_author">Koni</string>
 	<string name="connector_yallo_name">Yallo</string>
 	<string name="connector_yallo_preferences">Preferences - Yallo</string>
