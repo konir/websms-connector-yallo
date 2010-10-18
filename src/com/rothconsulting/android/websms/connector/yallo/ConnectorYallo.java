@@ -193,8 +193,8 @@ public class ConnectorYallo extends Connector {
 			Log.d(TAG, fullTargetURL.toString());
 			Log.d(TAG, "--HTTP GET--");
 			// send data
-			HttpResponse response = Utils
-					.getHttpClient(fullTargetURL, null, null, null, null, true);
+			HttpResponse response = Utils.getHttpClient(fullTargetURL, null, null, null, null,
+					null, true);
 			int resp = response.getStatusLine().getStatusCode();
 			if (resp != HttpURLConnection.HTTP_OK) {
 				throw new WebSMSException(context, R.string.error_http, "" + resp);
