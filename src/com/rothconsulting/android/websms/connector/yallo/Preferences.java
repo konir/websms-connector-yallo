@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Koni Roth
+ * Copyright (C) 2010 Koni
  * 
  * This file is only usefull as part of WebSMS.
  * 
@@ -62,9 +62,12 @@ public final class Preferences extends PreferenceActivity {
 	protected void onPause() {
 		super.onPause();
 		// check if prefs changed
-		final SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(this);
-		needBootstrap |= user != null && !user.equals(p.getString(PREFS_USER, ""));
-		needBootstrap |= pw != null && !pw.equals(p.getString(PREFS_PASSWORD, ""));
+		final SharedPreferences p = PreferenceManager
+				.getDefaultSharedPreferences(this);
+		needBootstrap |= user != null
+				&& !user.equals(p.getString(PREFS_USER, ""));
+		needBootstrap |= pw != null
+				&& !pw.equals(p.getString(PREFS_PASSWORD, ""));
 		user = p.getString(PREFS_USER, "");
 		pw = p.getString(PREFS_PASSWORD, "");
 	}
@@ -78,7 +81,8 @@ public final class Preferences extends PreferenceActivity {
 		if (needBootstrap) {
 			return true;
 		}
-		final SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(context);
+		final SharedPreferences p = PreferenceManager
+				.getDefaultSharedPreferences(context);
 
 		return p.getString(PREFS_USER, "").length() == 0;
 	}

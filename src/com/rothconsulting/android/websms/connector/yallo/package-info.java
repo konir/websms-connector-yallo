@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Koni Roth
+ * Copyright (C) 2010 Koni
  * 
  * This file is only usefull as part of WebSMS.
  * 
