@@ -59,6 +59,8 @@ public class ConnectorYallo extends Connector {
 
 	/** Check whether this connector is bootstrapping. */
 	private static boolean inBootstrap = false;
+	/** My Ad-ID */
+	private static final String AD_UNITID = "a14ed1536d6c700";
 
 	/**
 	 * {@inheritDoc}
@@ -69,6 +71,7 @@ public class ConnectorYallo extends Connector {
 		ConnectorSpec c = new ConnectorSpec(name);
 		c.setAuthor(context.getString(R.string.connector_yallo_author));
 		c.setBalance(null);
+		c.setAdUnitId(AD_UNITID);
 		c.setCapabilities(ConnectorSpec.CAPABILITIES_BOOTSTRAP
 				| ConnectorSpec.CAPABILITIES_UPDATE
 				| ConnectorSpec.CAPABILITIES_SEND
