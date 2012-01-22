@@ -21,8 +21,10 @@ package com.rothconsulting.android.websms.connector.yallo;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.message.BasicNameValuePair;
 
 import android.content.Context;
 import android.content.Intent;
@@ -49,6 +51,8 @@ public class ConnectorYallo extends Connector {
 	private static final String URL_LOGIN = "https://www.yallo.ch/kp/dyn/web/j_security_check.do";
 	/** SMS URL. */
 	private static final String URL_SENDSMS = "https://www.yallo.ch/kp/dyn/web/sec/acc/sms/sendSms.do";
+
+	private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:8.0) Gecko/20100101 Firefox/8.0";
 
 	private static final String YALLO_ENCODING = "ISO-8859-1";
 
@@ -206,8 +210,12 @@ public class ConnectorYallo extends Connector {
 			Log.d(TAG, fullTargetURL.toString());
 			Log.d(TAG, "--HTTP GET--");
 			// send data
+
+			ArrayList<BasicNameValuePair> postParameter = null;
+
 			HttpResponse response = Utils.getHttpClient(fullTargetURL, null,
-					null, null, null, null, true);
+					postParameter, USER_AGENT, fullTargetURL, YALLO_ENCODING,
+					true);
 			int resp = response.getStatusLine().getStatusCode();
 			if (resp != HttpURLConnection.HTTP_OK) {
 				throw new WebSMSException(context, R.string.error_http, ""
