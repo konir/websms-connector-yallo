@@ -21,10 +21,8 @@ package com.rothconsulting.android.websms.connector.yallo;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.message.BasicNameValuePair;
 
 import android.content.Context;
 import android.content.Intent;
@@ -36,6 +34,7 @@ import de.ub0r.android.websms.connector.common.ConnectorCommand;
 import de.ub0r.android.websms.connector.common.ConnectorSpec;
 import de.ub0r.android.websms.connector.common.ConnectorSpec.SubConnectorSpec;
 import de.ub0r.android.websms.connector.common.Utils;
+import de.ub0r.android.websms.connector.common.Utils.HttpOptions;
 import de.ub0r.android.websms.connector.common.WebSMSException;
 
 /**
@@ -211,11 +210,18 @@ public class ConnectorYallo extends Connector {
 			Log.d(TAG, "--HTTP GET--");
 			// send data
 
-			ArrayList<BasicNameValuePair> postParameter = null;
+			HttpOptions httpOptions = new HttpOptions();
+			httpOptions.url = fullTargetURL;
+			httpOptions.userAgent = USER_AGENT;
+			httpOptions.encoding = YALLO_ENCODING;
+			httpOptions.trustAll = true;
 
-			HttpResponse response = Utils.getHttpClient(fullTargetURL, null,
-					postParameter, USER_AGENT, fullTargetURL, YALLO_ENCODING,
-					true);
+			HttpResponse response = Utils.getHttpClient(httpOptions);
+
+			// HttpResponse response = Utils.getHttpClient(fullTargetURL, null,
+			// postParameter, USER_AGENT, fullTargetURL, YALLO_ENCODING,
+			// true);
+
 			int resp = response.getStatusLine().getStatusCode();
 			if (resp != HttpURLConnection.HTTP_OK) {
 				throw new WebSMSException(context, R.string.error_http, ""
