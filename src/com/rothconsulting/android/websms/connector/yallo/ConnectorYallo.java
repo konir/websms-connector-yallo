@@ -51,7 +51,7 @@ public class ConnectorYallo extends Connector {
 	/** SMS URL. */
 	private static final String URL_SENDSMS = "https://www.yallo.ch/kp/dyn/web/sec/acc/sms/sendSms.do";
 
-	private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:8.0) Gecko/20100101 Firefox/8.0";
+	private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0";
 
 	private static final String YALLO_ENCODING = "ISO-8859-1";
 
