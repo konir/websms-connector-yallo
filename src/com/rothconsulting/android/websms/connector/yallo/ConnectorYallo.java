@@ -210,10 +210,9 @@ public class ConnectorYallo extends Connector {
 			Log.d(TAG, "--HTTP GET--");
 			// send data
 
-			HttpOptions httpOptions = new HttpOptions();
+			HttpOptions httpOptions = new HttpOptions(YALLO_ENCODING);
 			httpOptions.url = fullTargetURL;
 			httpOptions.userAgent = USER_AGENT;
-			httpOptions.encoding = YALLO_ENCODING;
 			httpOptions.trustAll = true;
 
 			HttpResponse response = Utils.getHttpClient(httpOptions);
