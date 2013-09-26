@@ -29,6 +29,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
+
+import com.google.analytics.tracking.android.GoogleAnalytics;
+import com.google.analytics.tracking.android.Tracker;
+
 import de.ub0r.android.websms.connector.common.Connector;
 import de.ub0r.android.websms.connector.common.ConnectorCommand;
 import de.ub0r.android.websms.connector.common.ConnectorSpec;
@@ -36,6 +40,8 @@ import de.ub0r.android.websms.connector.common.ConnectorSpec.SubConnectorSpec;
 import de.ub0r.android.websms.connector.common.Utils;
 import de.ub0r.android.websms.connector.common.Utils.HttpOptions;
 import de.ub0r.android.websms.connector.common.WebSMSException;
+
+//import android.util.Log;
 
 /**
  * AsyncTask to manage IO to Yallo API.
@@ -64,6 +70,11 @@ public class ConnectorYallo extends Connector {
 	private static boolean inBootstrap = false;
 	/** My Ad-ID */
 	private static final String AD_UNITID = "a14ed1536d6c700";
+	/** My Analytics-ID */
+	private static final String ANALYTICS_ID = "UA-38114228-3";
+
+	private Tracker mGaTracker;
+	private GoogleAnalytics mGaInstance;
 
 	/**
 	 * {@inheritDoc}
@@ -76,12 +87,9 @@ public class ConnectorYallo extends Connector {
 		c.setBalance(null);
 		c.setLimitLength(130);
 		c.setAdUnitId(AD_UNITID);
-		c.setCapabilities(ConnectorSpec.CAPABILITIES_BOOTSTRAP
-				| ConnectorSpec.CAPABILITIES_UPDATE
-				| ConnectorSpec.CAPABILITIES_SEND
-				| ConnectorSpec.CAPABILITIES_PREFS);
-		c.addSubConnector("yallo", c.getName(),
-				SubConnectorSpec.FEATURE_MULTIRECIPIENTS);
+		c.setCapabilities(ConnectorSpec.CAPABILITIES_BOOTSTRAP | ConnectorSpec.CAPABILITIES_UPDATE
+				| ConnectorSpec.CAPABILITIES_SEND | ConnectorSpec.CAPABILITIES_PREFS);
+		c.addSubConnector("yallo", c.getName(), SubConnectorSpec.FEATURE_MULTIRECIPIENTS);
 		return c;
 	}
 
@@ -89,15 +97,12 @@ public class ConnectorYallo extends Connector {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final ConnectorSpec updateSpec(final Context context,
-			final ConnectorSpec connectorSpec) {
-		Log.d(TAG, "Start updateSpec");
-		final SharedPreferences p = PreferenceManager
-				.getDefaultSharedPreferences(context);
+	public final ConnectorSpec updateSpec(final Context context, final ConnectorSpec connectorSpec) {
+		this.log("Start updateSpec");
+		final SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(context);
 		if (p.getBoolean(Preferences.PREFS_ENABLED, false)) {
-			if (p.getString(Preferences.PREFS_USER, "").length() > 0
-					&& p.getString(Preferences.PREFS_PASSWORD, "") // .
-							.length() > 0) {
+			if (p.getString(Preferences.PREFS_USER, "").length() > 0 && p.getString(Preferences.PREFS_PASSWORD, "") // .
+					.length() > 0) {
 				connectorSpec.setReady();
 			} else {
 				connectorSpec.setStatus(ConnectorSpec.STATUS_ENABLED);
@@ -105,7 +110,7 @@ public class ConnectorYallo extends Connector {
 		} else {
 			connectorSpec.setStatus(ConnectorSpec.STATUS_INACTIVE);
 		}
-		Log.d(TAG, "End updateSpec");
+		this.log("End updateSpec");
 		return connectorSpec;
 	}
 
@@ -113,48 +118,60 @@ public class ConnectorYallo extends Connector {
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected final void doBootstrap(final Context context, final Intent intent)
-			throws WebSMSException {
-		Log.d(TAG, "Start doBootstrap");
+	protected final void doBootstrap(final Context context, final Intent intent) throws WebSMSException {
+		this.log("Start doBootstrap");
 		if (inBootstrap && !this.GUTHABEN_SMS_GRATIS.equals(DUMMY)) {
-			Log.d(TAG, "already in bootstrap: skip bootstrap");
+			this.log("already in bootstrap: skip bootstrap");
 			return;
 		}
 		inBootstrap = true;
 
 		StringBuilder url = new StringBuilder(URL_LOGIN);
 		inBootstrap = true;
-		final SharedPreferences p = PreferenceManager
-				.getDefaultSharedPreferences(context);
+		final SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(context);
 		url.append("?j_username=" + p.getString(Preferences.PREFS_USER, ""));
 		url.append("&j_password=" + p.getString(Preferences.PREFS_PASSWORD, ""));
-		Log.d(TAG, "url=" + url);
+		this.log("url=" + url);
 		this.sendData(url.toString(), context, false);
-		Log.d(TAG, "End doBootstrap");
+		this.log("End doBootstrap");
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected final void doUpdate(final Context context, final Intent intent)
-			throws WebSMSException {
-		Log.d(TAG, "Start doUpdate");
+	protected final void doUpdate(final Context context, final Intent intent) throws WebSMSException {
+		this.log("Start doUpdate");
 		this.doBootstrap(context, intent);
+
+		// Get singleton.
+		this.mGaInstance = GoogleAnalytics.getInstance(context);
+		// To set the default tracker, use:
+		// First get a tracker using a new property ID.
+		Tracker newTracker = this.mGaInstance.getTracker(ANALYTICS_ID);
+		// Then make newTracker the default tracker globally.
+		this.mGaInstance.setDefaultTracker(newTracker);
+		// Get default tracker.
+		this.mGaTracker = this.mGaInstance.getDefaultTracker();
 
 		this.sendData(URL_SENDSMS, context, true);
 		this.setBalance(context);
 
-		Log.d(TAG, "End doUpdate");
+		// Google analytics
+		if (this.mGaTracker != null) {
+			this.log("Tracking ID=" + this.mGaTracker.getTrackingId());
+			this.mGaTracker.sendEvent(TAG, "doUpdate", "Balance: " + this.getSpec(context).getBalance(), 0L);
+		}
+
+		this.log("End doUpdate");
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected final void doSend(final Context context, final Intent intent)
-			throws WebSMSException {
-		Log.d(TAG, "Start doSend");
+	protected final void doSend(final Context context, final Intent intent) throws WebSMSException {
+		this.log("Start doSend");
 		this.doBootstrap(context, intent);
 
 		ConnectorCommand command = new ConnectorCommand(intent);
@@ -165,10 +182,10 @@ public class ConnectorYallo extends Connector {
 			e.printStackTrace();
 			throw new WebSMSException(context, R.string.error_service);
 		}
-		Log.d(TAG, "message=" + text);
+		this.log("message=" + text);
 
 		String[] to = command.getRecipients();
-		Log.d(TAG, "numer of recipients=" + to.length);
+		this.log("numer of recipients=" + to.length);
 
 		for (int i = 0; i < to.length; i++) {
 			String receiver = to[i];
@@ -182,12 +199,18 @@ public class ConnectorYallo extends Connector {
 			url.append("&charsLeft=" + "" + (130 - text.length()));
 			url.append("&message=" + text);
 			url.append("&send=%A0senden");
-			Log.d(TAG, "url=" + url);
+			this.log("url=" + url);
 			// push data
 			this.sendData(url.toString(), context, true);
-			Log.d(TAG, "End doSend");
-		}
 
+			// Google analytics
+			if (this.mGaTracker != null) {
+				this.log("Tracking ID=" + this.mGaTracker.getTrackingId());
+				this.mGaTracker.sendEvent(TAG, "Send SMS", "Count receiver: " + i + 1, 0L);
+			}
+
+		}
+		this.log("End doSend");
 	}
 
 	/**
@@ -200,14 +223,14 @@ public class ConnectorYallo extends Connector {
 	 * @throws WebSMSException
 	 *             WebSMSException
 	 */
-	private void sendData(final String fullTargetURL, final Context context,
-			final boolean parseHtml) throws WebSMSException {
-		Log.d(TAG, "Start sendData");
+	private void sendData(final String fullTargetURL, final Context context, final boolean parseHtml)
+			throws WebSMSException {
+		this.log("Start sendData");
 		try { // get Connection
 
-			Log.d(TAG, "--HTTP GET--");
-			Log.d(TAG, fullTargetURL.toString());
-			Log.d(TAG, "--HTTP GET--");
+			this.log("--HTTP GET--");
+			this.log(fullTargetURL.toString());
+			this.log("--HTTP GET--");
 			// send data
 
 			HttpOptions httpOptions = new HttpOptions(YALLO_ENCODING);
@@ -223,24 +246,22 @@ public class ConnectorYallo extends Connector {
 
 			int resp = response.getStatusLine().getStatusCode();
 			if (resp != HttpURLConnection.HTTP_OK) {
-				throw new WebSMSException(context, R.string.error_http, ""
-						+ resp);
+				throw new WebSMSException(context, R.string.error_http, "" + resp);
 			}
-			String htmlText = Utils.stream2str(
-					response.getEntity().getContent()).trim();
+			String htmlText = Utils.stream2str(response.getEntity().getContent()).trim();
 			if (htmlText == null || htmlText.length() == 0) {
 				throw new WebSMSException(context, R.string.error_service);
 			}
-			// Log.d(TAG, "--HTTP RESPONSE--");
-			// Log.d(TAG, htmlText);
-			// Log.d(TAG, "--HTTP RESPONSE--");
+			// this.log("--HTTP RESPONSE--");
+			// this.log(htmlText);
+			// this.log("--HTTP RESPONSE--");
 
 			if (parseHtml) {
 				// Guthaben CHF
 				int indexStartGuthaben = htmlText.indexOf("Ihr Guthaben:");
 				int textLenght = 14;
 				if (indexStartGuthaben == -1) {
-					indexStartGuthaben = htmlText.indexOf("Votre crédit:");
+					indexStartGuthaben = htmlText.indexOf("Votre crï¿½dit:");
 					textLenght = 14;
 				}
 				if (indexStartGuthaben == -1) {
@@ -255,10 +276,9 @@ public class ConnectorYallo extends Connector {
 					indexStartGuthaben = htmlText.indexOf("Your credit:");
 					textLenght = 13;
 				}
-				this.GUTHABEN_CHF = htmlText.substring(indexStartGuthaben
-						+ textLenght, indexStartGuthaben + textLenght + 11);
-				Log.d(TAG, "indexOf Guthaben=" + indexStartGuthaben
-						+ " -- Guthaben=" + this.GUTHABEN_CHF);
+				this.GUTHABEN_CHF = htmlText.substring(indexStartGuthaben + textLenght, indexStartGuthaben + textLenght
+						+ 11);
+				this.log("indexOf Guthaben=" + indexStartGuthaben + " -- Guthaben=" + this.GUTHABEN_CHF);
 
 				// Gratis SMS
 				int indexStartSMSGuthaben = htmlText.indexOf("SMS gratis,");
@@ -274,15 +294,13 @@ public class ConnectorYallo extends Connector {
 				if (indexStartSMSGuthaben == -1) {
 					indexStartSMSGuthaben = htmlText.indexOf("free SMS,");
 				}
-				this.GUTHABEN_SMS_GRATIS = htmlText.substring(
-						indexStartSMSGuthaben - 3, indexStartSMSGuthaben - 1);
-				Log.d(TAG, "indexOf SMS gratis=" + indexStartSMSGuthaben
-						+ " -- " + this.GUTHABEN_SMS_GRATIS);
+				this.GUTHABEN_SMS_GRATIS = htmlText.substring(indexStartSMSGuthaben - 3, indexStartSMSGuthaben - 1);
+				this.log("indexOf SMS gratis=" + indexStartSMSGuthaben + " -- " + this.GUTHABEN_SMS_GRATIS);
 
 				// Gekaufte SMS
 				indexStartSMSGuthaben = htmlText.indexOf("SMS gekauft");
 				if (indexStartSMSGuthaben == -1) {
-					indexStartSMSGuthaben = htmlText.indexOf("SMS achetés");
+					indexStartSMSGuthaben = htmlText.indexOf("SMS achetï¿½s");
 				}
 				if (indexStartSMSGuthaben == -1) {
 					indexStartSMSGuthaben = htmlText.indexOf("SMS acquistati");
@@ -293,10 +311,9 @@ public class ConnectorYallo extends Connector {
 				if (indexStartSMSGuthaben == -1) {
 					indexStartSMSGuthaben = htmlText.indexOf("purchased SMS");
 				}
-				this.GUTHABEN_SMS_BEZAHLT = htmlText.substring(
-						indexStartSMSGuthaben - 3, indexStartSMSGuthaben - 1);
-				Log.d(TAG, "indexOf SMS gekauft=" + indexStartSMSGuthaben
-						+ " -- SMS gekauft=" + this.GUTHABEN_SMS_BEZAHLT);
+				this.GUTHABEN_SMS_BEZAHLT = htmlText.substring(indexStartSMSGuthaben - 3, indexStartSMSGuthaben - 1);
+				this.log("indexOf SMS gekauft=" + indexStartSMSGuthaben + " -- SMS gekauft="
+						+ this.GUTHABEN_SMS_BEZAHLT);
 
 				this.setBalance(context);
 			}
@@ -311,34 +328,39 @@ public class ConnectorYallo extends Connector {
 
 	private void setBalance(final Context context) {
 		this.GUTHABEN_SMS_GRATIS = this.removeBracket(this.GUTHABEN_SMS_GRATIS);
-		this.GUTHABEN_SMS_BEZAHLT = this
-				.removeBracket(this.GUTHABEN_SMS_BEZAHLT);
+		this.GUTHABEN_SMS_BEZAHLT = this.removeBracket(this.GUTHABEN_SMS_BEZAHLT);
 
-		if (this.GUTHABEN_SMS_BEZAHLT != null
-				&& !this.GUTHABEN_SMS_BEZAHLT.equals(DUMMY)
+		if (this.GUTHABEN_SMS_BEZAHLT != null && !this.GUTHABEN_SMS_BEZAHLT.equals(DUMMY)
 				&& !this.GUTHABEN_SMS_BEZAHLT.equals("0")) {
 
 			this.getSpec(context).setBalance(
-					"Gratis=" + this.GUTHABEN_SMS_GRATIS + ", Bezahlt="
-							+ this.GUTHABEN_SMS_BEZAHLT + ", "
+					"Gratis=" + this.GUTHABEN_SMS_GRATIS + ", Bezahlt=" + this.GUTHABEN_SMS_BEZAHLT + ", "
 							+ this.GUTHABEN_CHF);
 
 		} else {
-			this.getSpec(context).setBalance(
-					"Gratis=" + this.GUTHABEN_SMS_GRATIS + ", "
-							+ this.GUTHABEN_CHF);
+			this.getSpec(context).setBalance("Gratis=" + this.GUTHABEN_SMS_GRATIS + ", " + this.GUTHABEN_CHF);
 
 		}
 	}
 
 	private String removeBracket(String string) {
-		Log.d(TAG, "string vorher=" + string);
+		this.log("string vorher=" + string);
 		if (string != null && string.contains(">")) {
-			Log.d(TAG, "string in=" + string);
+			this.log("string in=" + string);
 			string = string.replace(">", " ");
 			string = string.trim();
 		}
-		Log.d(TAG, "string nachher=" + string);
+		this.log("string nachher=" + string);
 		return string;
 	}
+
+	/**
+	 * central logger
+	 * 
+	 * @param message
+	 */
+	private void log(final String message) {
+		// Log.d(TAG, message);
+	}
+
 }

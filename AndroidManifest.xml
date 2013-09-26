@@ -17,8 +17,20 @@
 		not, see <http://www.gnu.org/licenses/>.
 	-->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="com.rothconsulting.android.websms.connector.yallo" android:versionCode="15" android:versionName="1.5">
-	<application android:label="@string/app_name" android:icon="@drawable/icon" android:debuggable="false">
+	package="com.rothconsulting.android.websms.connector.yallo" android:versionCode="16" android:versionName="1.6">
+
+	<uses-sdk android:minSdkVersion="7" android:targetSdkVersion="17" />
+	<supports-screens android:largeScreens="true"
+		android:normalScreens="true" android:smallScreens="true"
+		android:anyDensity="true" />
+	<!-- INTERNET needed for sending sms via internet. -->
+	<uses-permission android:name="android.permission.INTERNET" />
+	<!-- WAKE_LOCK needed to make sure, sms are send even if user sends device to sleep. -->
+	<uses-permission android:name="android.permission.WAKE_LOCK" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />	
+    
+    
+    	<application android:label="@string/app_name" android:icon="@drawable/icon">
 
 		<!--
 			This Activity is brought by the WebSMS Connector Plugin API. It shows
@@ -57,12 +69,5 @@
 			</intent-filter>
 		</receiver>
 	</application>
-	<uses-sdk android:minSdkVersion="7" android:targetSdkVersion="15" />
-	<supports-screens android:largeScreens="true"
-		android:normalScreens="true" android:smallScreens="true"
-		android:anyDensity="true" />
-	<!-- INTERNET needed for sending sms via internet. -->
-	<uses-permission android:name="android.permission.INTERNET" />
-	<!-- WAKE_LOCK needed to make sure, sms are send even if user sends device to sleep. -->
-	<uses-permission android:name="android.permission.WAKE_LOCK" />
+		
 </manifest> 
