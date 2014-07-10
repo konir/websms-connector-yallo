@@ -69,7 +69,7 @@ public class ConnectorYallo extends Connector {
 	/** Check whether this connector is bootstrapping. */
 	private static boolean inBootstrap = false;
 	/** My Ad-ID */
-	private static final String AD_UNITID = "a14ed1536d6c700";
+	private static final String AD_UNITID = "ca-app-pub-5619114666968507/9953800139";
 	/** My Analytics-ID */
 	private static final String ANALYTICS_ID = "UA-38114228-3";
 
