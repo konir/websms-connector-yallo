@@ -57,7 +57,7 @@ public class ConnectorYallo extends Connector {
 	/** SMS URL. */
 	private static final String URL_SENDSMS = "https://www.yallo.ch/kp/dyn/web/sec/acc/sms/sendSms.do";
 
-	private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0";
+	private static final String USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:31.0) Gecko/20100101 Firefox/31.0";
 
 	private static final String YALLO_ENCODING = "ISO-8859-1";
 
@@ -75,6 +75,18 @@ public class ConnectorYallo extends Connector {
 
 	private Tracker mGaTracker;
 	private GoogleAnalytics mGaInstance;
+
+	private void initAnalytics(final Context context) {
+		// Get singleton.
+		this.mGaInstance = GoogleAnalytics.getInstance(context);
+		// To set the default tracker, use:
+		// First get a tracker using a new property ID.
+		Tracker newTracker = this.mGaInstance.getTracker(ANALYTICS_ID);
+		// Then make newTracker the default tracker globally.
+		this.mGaInstance.setDefaultTracker(newTracker);
+		// Get default tracker.
+		this.mGaTracker = this.mGaInstance.getDefaultTracker();
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -144,15 +156,7 @@ public class ConnectorYallo extends Connector {
 		this.log("Start doUpdate");
 		this.doBootstrap(context, intent);
 
-		// Get singleton.
-		this.mGaInstance = GoogleAnalytics.getInstance(context);
-		// To set the default tracker, use:
-		// First get a tracker using a new property ID.
-		Tracker newTracker = this.mGaInstance.getTracker(ANALYTICS_ID);
-		// Then make newTracker the default tracker globally.
-		this.mGaInstance.setDefaultTracker(newTracker);
-		// Get default tracker.
-		this.mGaTracker = this.mGaInstance.getDefaultTracker();
+		this.initAnalytics(context);
 
 		this.sendData(URL_SENDSMS, context, true);
 		this.setBalance(context);
@@ -204,6 +208,9 @@ public class ConnectorYallo extends Connector {
 			this.sendData(url.toString(), context, true);
 
 			// Google analytics
+			if (this.mGaTracker == null) {
+				this.initAnalytics(context);
+			}
 			if (this.mGaTracker != null) {
 				this.log("Tracking ID=" + this.mGaTracker.getTrackingId());
 				this.mGaTracker.sendEvent(TAG, "Send SMS", "Count receiver: " + i + 1, 0L);
