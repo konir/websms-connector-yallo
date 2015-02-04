@@ -21,8 +21,11 @@ package com.rothconsulting.android.websms.connector.yallo;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.message.BasicNameValuePair;
 
 import android.content.Context;
 import android.content.Intent;
@@ -30,7 +33,9 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import com.google.analytics.tracking.android.Fields;
 import com.google.analytics.tracking.android.GoogleAnalytics;
+import com.google.analytics.tracking.android.MapBuilder;
 import com.google.analytics.tracking.android.Tracker;
 
 import de.ub0r.android.websms.connector.common.Connector;
@@ -57,7 +62,7 @@ public class ConnectorYallo extends Connector {
 	/** SMS URL. */
 	private static final String URL_SENDSMS = "https://www.yallo.ch/kp/dyn/web/sec/acc/sms/sendSms.do";
 
-	private static final String USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:31.0) Gecko/20100101 Firefox/31.0";
+	private static final String USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:35.0) Gecko/20100101 Firefox/35.0";
 
 	private static final String YALLO_ENCODING = "ISO-8859-1";
 
@@ -138,13 +143,14 @@ public class ConnectorYallo extends Connector {
 		}
 		inBootstrap = true;
 
-		StringBuilder url = new StringBuilder(URL_LOGIN);
-		inBootstrap = true;
 		final SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(context);
-		url.append("?j_username=" + p.getString(Preferences.PREFS_USER, ""));
-		url.append("&j_password=" + p.getString(Preferences.PREFS_PASSWORD, ""));
-		this.log("url=" + url);
-		this.sendData(url.toString(), context, false);
+		// Building POST parameter
+		ArrayList<BasicNameValuePair> postParameter = new ArrayList<BasicNameValuePair>();
+		postParameter.add(new BasicNameValuePair("j_username", p.getString(Preferences.PREFS_USER, "")));
+		postParameter.add(new BasicNameValuePair("j_password", p.getString(Preferences.PREFS_PASSWORD, "")));
+
+		this.log("URL_LOGIN=" + URL_LOGIN);
+		this.sendData(URL_LOGIN, context, postParameter, false);
 		this.log("End doBootstrap");
 	}
 
@@ -156,17 +162,19 @@ public class ConnectorYallo extends Connector {
 		this.log("Start doUpdate");
 		this.doBootstrap(context, intent);
 
-		this.initAnalytics(context);
-
-		this.sendData(URL_SENDSMS, context, true);
+		this.sendData(URL_SENDSMS, context, null, true);
 		this.setBalance(context);
 
 		// Google analytics
-		if (this.mGaTracker != null) {
-			this.log("Tracking ID=" + this.mGaTracker.getTrackingId());
-			this.mGaTracker.sendEvent(TAG, "doUpdate", "Balance: " + this.getSpec(context).getBalance(), 0L);
+		if (this.mGaTracker == null || this.mGaInstance == null) {
+			this.initAnalytics(context);
 		}
-
+		// Google analytics
+		if (this.mGaTracker != null) {
+			this.mGaTracker.send(MapBuilder
+					.createEvent(TAG, "doUpdate V3", "Balance: " + this.getSpec(context).getBalance(), null)
+					.set(Fields.SESSION_CONTROL, "start").build());
+		}
 		this.log("End doUpdate");
 	}
 
@@ -197,25 +205,26 @@ public class ConnectorYallo extends Connector {
 			int end = receiver.indexOf(">");
 			String destination = receiver.substring(start + 1, end);
 
-			StringBuilder url = new StringBuilder(URL_SENDSMS);
+			// Building POST parameter
+			ArrayList<BasicNameValuePair> postParameter = new ArrayList<BasicNameValuePair>();
+			postParameter.add(new BasicNameValuePair("charsLeft", "" + (130 - text.length())));
+			postParameter.add(new BasicNameValuePair("destination", destination));
+			postParameter.add(new BasicNameValuePair("message", text));
+			postParameter.add(new BasicNameValuePair("send", "senden"));
 
-			url.append("?destination=" + destination);
-			url.append("&charsLeft=" + "" + (130 - text.length()));
-			url.append("&message=" + text);
-			url.append("&send=%A0senden");
-			this.log("url=" + url);
+			this.log("URL_SENDSMS=" + URL_SENDSMS);
 			// push data
-			this.sendData(url.toString(), context, true);
+			this.sendData(URL_SENDSMS, context, postParameter, true);
 
 			// Google analytics
-			if (this.mGaTracker == null) {
+			if (this.mGaTracker == null || this.mGaInstance == null) {
 				this.initAnalytics(context);
 			}
+			// Google analytics
 			if (this.mGaTracker != null) {
-				this.log("Tracking ID=" + this.mGaTracker.getTrackingId());
-				this.mGaTracker.sendEvent(TAG, "Send SMS", "Count receiver: " + i + 1, 0L);
+				this.mGaTracker.send(MapBuilder.createEvent(TAG, "Send SMS V3", "Count receiver: " + i + 1, null)
+						.set(Fields.SESSION_CONTROL, "start").build());
 			}
-
 		}
 		this.log("End doSend");
 	}
@@ -230,26 +239,24 @@ public class ConnectorYallo extends Connector {
 	 * @throws WebSMSException
 	 *             WebSMSException
 	 */
-	private void sendData(final String fullTargetURL, final Context context, final boolean parseHtml)
-			throws WebSMSException {
+	private void sendData(final String url, final Context context, final ArrayList<BasicNameValuePair> postParameter,
+			final boolean parseHtml) throws WebSMSException {
 		this.log("Start sendData");
 		try { // get Connection
 
-			this.log("--HTTP GET--");
-			this.log(fullTargetURL.toString());
-			this.log("--HTTP GET--");
-			// send data
+			this.log(url);
 
-			HttpOptions httpOptions = new HttpOptions(YALLO_ENCODING);
-			httpOptions.url = fullTargetURL;
+			HttpOptions httpOptions = new HttpOptions();
+			httpOptions.url = url;
 			httpOptions.userAgent = USER_AGENT;
 			httpOptions.trustAll = true;
+			this.log("UrlEncodedFormEntity()");
+			if (postParameter != null) {
+				httpOptions.postData = new UrlEncodedFormEntity(postParameter, YALLO_ENCODING);
+			}
 
+			this.log("send data: getHttpClient(...)");
 			HttpResponse response = Utils.getHttpClient(httpOptions);
-
-			// HttpResponse response = Utils.getHttpClient(fullTargetURL, null,
-			// postParameter, USER_AGENT, fullTargetURL, YALLO_ENCODING,
-			// true);
 
 			int resp = response.getStatusLine().getStatusCode();
 			if (resp != HttpURLConnection.HTTP_OK) {
@@ -259,16 +266,16 @@ public class ConnectorYallo extends Connector {
 			if (htmlText == null || htmlText.length() == 0) {
 				throw new WebSMSException(context, R.string.error_service);
 			}
-			// this.log("--HTTP RESPONSE--");
-			// this.log(htmlText);
-			// this.log("--HTTP RESPONSE--");
+			this.log("--HTTP RESPONSE--");
+			this.log(htmlText);
+			this.log("--HTTP RESPONSE--");
 
 			if (parseHtml) {
 				// Guthaben CHF
 				int indexStartGuthaben = htmlText.indexOf("Ihr Guthaben:");
 				int textLenght = 14;
 				if (indexStartGuthaben == -1) {
-					indexStartGuthaben = htmlText.indexOf("Votre cr�dit:");
+					indexStartGuthaben = htmlText.indexOf("Votre crèdit:");
 					textLenght = 14;
 				}
 				if (indexStartGuthaben == -1) {
@@ -307,7 +314,7 @@ public class ConnectorYallo extends Connector {
 				// Gekaufte SMS
 				indexStartSMSGuthaben = htmlText.indexOf("SMS gekauft");
 				if (indexStartSMSGuthaben == -1) {
-					indexStartSMSGuthaben = htmlText.indexOf("SMS achet�s");
+					indexStartSMSGuthaben = htmlText.indexOf("SMS achetès");
 				}
 				if (indexStartSMSGuthaben == -1) {
 					indexStartSMSGuthaben = htmlText.indexOf("SMS acquistati");
@@ -343,7 +350,6 @@ public class ConnectorYallo extends Connector {
 			this.getSpec(context).setBalance(
 					"Gratis=" + this.GUTHABEN_SMS_GRATIS + ", Bezahlt=" + this.GUTHABEN_SMS_BEZAHLT + ", "
 							+ this.GUTHABEN_CHF);
-
 		} else {
 			this.getSpec(context).setBalance("Gratis=" + this.GUTHABEN_SMS_GRATIS + ", " + this.GUTHABEN_CHF);
 
