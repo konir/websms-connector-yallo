@@ -18,9 +18,7 @@
  */
 package com.rothconsulting.android.websms.connector.yallo;
 
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 
 import org.apache.http.HttpResponse;
@@ -187,14 +185,8 @@ public class ConnectorYallo extends Connector {
 		this.doBootstrap(context, intent);
 
 		ConnectorCommand command = new ConnectorCommand(intent);
-		String text = "";
-		try {
-			text = URLEncoder.encode(command.getText(), YALLO_ENCODING);
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			throw new WebSMSException(context, R.string.error_service);
-		}
-		this.log("message=" + text);
+
+		this.log("message=" + command.getText());
 
 		String[] to = command.getRecipients();
 		this.log("numer of recipients=" + to.length);
@@ -207,9 +199,9 @@ public class ConnectorYallo extends Connector {
 
 			// Building POST parameter
 			ArrayList<BasicNameValuePair> postParameter = new ArrayList<BasicNameValuePair>();
-			postParameter.add(new BasicNameValuePair("charsLeft", "" + (130 - text.length())));
+			postParameter.add(new BasicNameValuePair("charsLeft", "" + (130 - command.getText().length())));
 			postParameter.add(new BasicNameValuePair("destination", destination));
-			postParameter.add(new BasicNameValuePair("message", text));
+			postParameter.add(new BasicNameValuePair("message", command.getText()));
 			postParameter.add(new BasicNameValuePair("send", "senden"));
 
 			this.log("URL_SENDSMS=" + URL_SENDSMS);
